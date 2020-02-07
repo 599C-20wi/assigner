@@ -7,14 +7,14 @@ use std::net::{TcpListener, TcpStream, Shutdown};
 use std::{thread, time};
 use std::sync::{Arc, RwLock};
 
-use crate::message::{Update, Get, Assignment};
+use crate::message::{Get, Assignment};
 
 pub mod message;
 pub mod types;
 
 const PORT: u16 = 4333;
 
-fn handle_client(stream: TcpStream, counter: Arc<RwLock<HashMap<String, String>>>) {
+fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<String, String>>>) {
     let mut reader = BufReader::new(&stream);
     let mut writer = BufWriter::new(&stream);
     let mut buffer = Vec::new();
@@ -38,7 +38,7 @@ fn handle_client(stream: TcpStream, counter: Arc<RwLock<HashMap<String, String>>
             };
 
             let serialized = assignment.serialize();
-            writer.write(serialized.as_bytes()).unwrap();
+            writer.write_all(serialized.as_bytes()).unwrap();
             writer.flush().unwrap();
             buffer.clear();
             true
@@ -71,7 +71,7 @@ fn main() {
     // TODO: Broadcast Update's to all task servers
 
     // Shared assignment table.
-    let mut assignments = HashMap::new();
+    let assignments = HashMap::new();
     let counter = Arc::new(RwLock::new(assignments));
 
     // Spawn and detach thread for assignment generation.
