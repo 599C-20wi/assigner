@@ -31,7 +31,7 @@ impl Update {
 // Client -> assigner
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Get {
-    pub key: String,
+    pub slice_key: u64,
 }
 
 impl Get {
