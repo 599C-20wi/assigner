@@ -59,7 +59,7 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<String, Vec<Sli
     } {}
 }
 
-fn send_update(task_addr: &String, msg: Update) -> Result<(), io::Error> {
+fn send_update(task_addr: &str, msg: Update) -> Result<(), io::Error> {
     match TcpStream::connect(task_addr) {
         Ok(mut stream) => {
             let serialized = msg.serialize();
@@ -68,7 +68,7 @@ fn send_update(task_addr: &String, msg: Update) -> Result<(), io::Error> {
         }
         Err(e) => {
             error!("failed to connect to task server: {}", e);
-            return Err(e);
+            Err(e)
         }
     }
 }
@@ -77,15 +77,15 @@ fn set_inital_assignments(counter: Arc<RwLock<HashMap<String, Vec<Slice>>>>) {
     let mut assignments = counter.write().unwrap();
     let max = std::u64::MAX;
     assignments.insert(
-        String::from(format!("54.183.196.119:{}", PORT)),
+        format!("54.183.196.119:{}", PORT),
         vec![Slice::new(0, max / 3)],
     );
     assignments.insert(
-        String::from(format!("13.52.220.64:{}", PORT)),
+        format!("13.52.220.64:{}", PORT),
         vec![Slice::new((max / 3) + 1, (max / 3) * 2)],
     );
     assignments.insert(
-        String::from(format!("18.144.90.156:{}", PORT)),
+        format!("18.144.90.156:{}", PORT),
         vec![Slice::new((max / 3) * 2 + 1, max)],
     );
 }
@@ -114,21 +114,21 @@ fn main() {
     // Send inital assignments to task servers.
     let send_counter = Arc::clone(&counter);
     let inital_assignments = send_counter.read().unwrap();
-    let task1_addr = String::from(format!("54.183.196.119:{}", PORT));
+    let task1_addr = format!("54.183.196.119:{}", PORT);
     send_update(
         &task1_addr,
         Update::new(inital_assignments.get(&task1_addr).unwrap(), &Vec::new()),
     )
     .unwrap();
 
-    let task2_addr = String::from(format!("13.52.220.64:{}", PORT));
+    let task2_addr = format!("13.52.220.64:{}", PORT);
     send_update(
         &task2_addr,
         Update::new(inital_assignments.get(&task2_addr).unwrap(), &Vec::new()),
     )
     .unwrap();
 
-    let task3_addr = String::from(format!("18.144.90.156:{}", PORT));
+    let task3_addr = format!("18.144.90.156:{}", PORT);
     send_update(
         &task3_addr,
         Update::new(inital_assignments.get(&task3_addr).unwrap(), &Vec::new()),
