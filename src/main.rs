@@ -18,7 +18,11 @@ const SLEEP_MILLIS: u64 = 5000;
 
 const PORT: u16 = 4333;
 
-fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<String, Vec<Slice>>>>) {
+const TASK_ONE_ADDR: &str = "54.183.196.119:4333";
+const TASK_TWO_ADDR: &str = "13.52.220.64:4333";
+const TASK_THREE_ADDR: &str = "18.144.90.156:4333";
+
+fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut reader = BufReader::new(&stream);
     let mut writer = BufWriter::new(&stream);
     let mut buffer = Vec::new();
@@ -73,24 +77,18 @@ fn send_update(task_addr: &str, msg: Update) -> Result<(), io::Error> {
     }
 }
 
-fn set_inital_assignments(counter: Arc<RwLock<HashMap<String, Vec<Slice>>>>) {
+fn set_inital_assignments(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut assignments = counter.write().unwrap();
     let max = std::u64::MAX;
+    assignments.insert(TASK_ONE_ADDR, vec![Slice::new(0, max / 3)]);
     assignments.insert(
-        format!("54.183.196.119:{}", PORT),
-        vec![Slice::new(0, max / 3)],
-    );
-    assignments.insert(
-        format!("13.52.220.64:{}", PORT),
+        TASK_TWO_ADDR,
         vec![Slice::new((max / 3) + 1, (max / 3) * 2)],
     );
-    assignments.insert(
-        format!("18.144.90.156:{}", PORT),
-        vec![Slice::new((max / 3) * 2 + 1, max)],
-    );
+    assignments.insert(TASK_THREE_ADDR, vec![Slice::new((max / 3) * 2 + 1, max)]);
 }
 
-fn assigner_loop(_counter: Arc<RwLock<HashMap<String, Vec<Slice>>>>) {
+fn assigner_loop(_counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     loop {
         trace!("generating assignments");
 
@@ -114,24 +112,24 @@ fn main() {
     // Send inital assignments to task servers.
     let send_counter = Arc::clone(&counter);
     let inital_assignments = send_counter.read().unwrap();
-    let task1_addr = format!("54.183.196.119:{}", PORT);
     send_update(
-        &task1_addr,
-        Update::new(inital_assignments.get(&task1_addr).unwrap(), &Vec::new()),
+        &TASK_ONE_ADDR,
+        Update::new(inital_assignments.get(TASK_ONE_ADDR).unwrap(), &Vec::new()),
     )
     .unwrap();
 
-    let task2_addr = format!("13.52.220.64:{}", PORT);
     send_update(
-        &task2_addr,
-        Update::new(inital_assignments.get(&task2_addr).unwrap(), &Vec::new()),
+        &TASK_TWO_ADDR,
+        Update::new(inital_assignments.get(TASK_TWO_ADDR).unwrap(), &Vec::new()),
     )
     .unwrap();
 
-    let task3_addr = format!("18.144.90.156:{}", PORT);
     send_update(
-        &task3_addr,
-        Update::new(inital_assignments.get(&task3_addr).unwrap(), &Vec::new()),
+        &TASK_THREE_ADDR,
+        Update::new(
+            inital_assignments.get(TASK_THREE_ADDR).unwrap(),
+            &Vec::new(),
+        ),
     )
     .unwrap();
 
