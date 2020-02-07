@@ -12,6 +12,8 @@ use crate::message::{Assignment, Get};
 pub mod message;
 pub mod types;
 
+const SLEEP_MILLIS: u64 = 5000;
+
 const PORT: u16 = 4333;
 
 fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<String, String>>>) {
@@ -65,7 +67,7 @@ fn assigner_loop(counter: Arc<RwLock<HashMap<String, String>>>) {
             map.insert("hello".to_string(), "world".to_string());
         }
 
-        thread::sleep(time::Duration::from_millis(3000));
+        thread::sleep(time::Duration::from_millis(SLEEP_MILLIS));
     }
 }
 
