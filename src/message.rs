@@ -11,6 +11,13 @@ pub struct Update {
 }
 
 impl Update {
+    pub fn new(a: &[Slice], ua: &[Slice]) -> Update {
+        Update {
+            assigned: a.to_vec(),
+            unassigned: ua.to_vec(),
+        }
+    }
+
     pub fn serialize(&self) -> String {
         let serialized = serde_json::to_string(&self).unwrap();
         add_newline(serialized)
