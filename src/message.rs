@@ -31,8 +31,7 @@ impl Update {
 // Client -> assigner
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Get {
-    // Hashed key from client
-    pub key: u64,
+    pub slice_key: u64,
 }
 
 impl Get {
