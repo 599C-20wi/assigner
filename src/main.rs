@@ -3,11 +3,11 @@ extern crate log;
 
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::net::{TcpListener, TcpStream, Shutdown};
-use std::{thread, time};
+use std::net::{Shutdown, TcpListener, TcpStream};
 use std::sync::{Arc, RwLock};
+use std::{thread, time};
 
-use crate::message::{Get, Assignment};
+use crate::message::{Assignment, Get};
 
 pub mod message;
 pub mod types;
@@ -33,8 +33,12 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<String, String>
                 }
             };
 
-            let assignment = Assignment{
-                addresses: vec![String::from("54.183.196.119"), String::from("13.52.220.64"), String::from("18.144.90.156")],
+            let assignment = Assignment {
+                addresses: vec![
+                    String::from("54.183.196.119"),
+                    String::from("13.52.220.64"),
+                    String::from("18.144.90.156"),
+                ],
             };
 
             let serialized = assignment.serialize();
@@ -42,12 +46,12 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<String, String>
             writer.flush().unwrap();
             buffer.clear();
             true
-        },
+        }
         Err(error) => {
             stream.shutdown(Shutdown::Both).unwrap();
             error!("stream read failed: {}", error);
             false
-        },
+        }
     } {}
 }
 
@@ -90,10 +94,10 @@ fn main() {
                 thread::spawn(move || {
                     handle_client(stream, client_counter);
                 });
-            },
+            }
             Err(e) => {
                 error!("client connect failed: {}", e);
-            },
+            }
         }
     }
     drop(listener);

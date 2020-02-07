@@ -1,10 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Slice {
-    pub start: u64,  // inclusive
-    pub end: u64,    // inclusive
+    pub start: u64, // inclusive
+    pub end: u64,   // inclusive
 }
 
 impl Slice {
