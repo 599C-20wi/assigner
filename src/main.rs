@@ -18,9 +18,9 @@ const SLEEP_MILLIS: u64 = 5000;
 
 const PORT: u16 = 4333;
 
-const TASK_ONE_ADDR: &str = "54.183.196.119:4333";
-const TASK_TWO_ADDR: &str = "13.52.220.64:4333";
-const TASK_THREE_ADDR: &str = "18.144.90.156:4333";
+const TASK_ONE_ADDRESS: &str = "54.241.208.105:4233";
+const TASK_TWO_ADDRESS: &str = "18.144.148.168:4233";
+const TASK_THREE_ADDRESS: &str = "52.9.0.84:4233";
 
 fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut reader = BufReader::new(&stream);
@@ -43,9 +43,9 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice
 
             let assignment = Assignment {
                 addresses: vec![
-                    String::from("54.183.196.119"),
-                    String::from("13.52.220.64"),
-                    String::from("18.144.90.156"),
+                    String::from(TASK_ONE_ADDRESS),
+                    String::from(TASK_TWO_ADDRESS),
+                    String::from(TASK_THREE_ADDRESS),
                 ],
             };
 
@@ -80,12 +80,12 @@ fn send_update(task_addr: &str, msg: Update) -> Result<(), io::Error> {
 fn set_inital_assignments(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut assignments = counter.write().unwrap();
     let max = std::u64::MAX;
-    assignments.insert(TASK_ONE_ADDR, vec![Slice::new(0, max / 3)]);
+    assignments.insert(TASK_ONE_ADDRESS, vec![Slice::new(0, max / 3)]);
     assignments.insert(
-        TASK_TWO_ADDR,
+        TASK_TWO_ADDRESS,
         vec![Slice::new((max / 3) + 1, (max / 3) * 2)],
     );
-    assignments.insert(TASK_THREE_ADDR, vec![Slice::new((max / 3) * 2 + 1, max)]);
+    assignments.insert(TASK_THREE_ADDRESS, vec![Slice::new((max / 3) * 2 + 1, max)]);
 }
 
 fn assigner_loop(_counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
@@ -113,21 +113,27 @@ fn main() {
     let send_counter = Arc::clone(&counter);
     let inital_assignments = send_counter.read().unwrap();
     send_update(
-        &TASK_ONE_ADDR,
-        Update::new(inital_assignments.get(TASK_ONE_ADDR).unwrap(), &Vec::new()),
-    )
-    .unwrap();
-
-    send_update(
-        &TASK_TWO_ADDR,
-        Update::new(inital_assignments.get(TASK_TWO_ADDR).unwrap(), &Vec::new()),
-    )
-    .unwrap();
-
-    send_update(
-        &TASK_THREE_ADDR,
+        &TASK_ONE_ADDRESS,
         Update::new(
-            inital_assignments.get(TASK_THREE_ADDR).unwrap(),
+            inital_assignments.get(TASK_ONE_ADDRESS).unwrap(),
+            &Vec::new(),
+        ),
+    )
+    .unwrap();
+
+    send_update(
+        &TASK_TWO_ADDRESS,
+        Update::new(
+            inital_assignments.get(TASK_TWO_ADDRESS).unwrap(),
+            &Vec::new(),
+        ),
+    )
+    .unwrap();
+
+    send_update(
+        &TASK_THREE_ADDRESS,
+        Update::new(
+            inital_assignments.get(TASK_THREE_ADDRESS).unwrap(),
             &Vec::new(),
         ),
     )
