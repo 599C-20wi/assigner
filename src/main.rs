@@ -16,11 +16,13 @@ pub mod types;
 
 const SLEEP_MILLIS: u64 = 5000;
 
-const PORT: u16 = 4333;
+const CLIENT_PORT: u16 = 3333;
+const TASK_PORT: u16 = 4233;
+const LISTEN_PORT: u16 = 4333;
 
-const TASK_ONE_ADDRESS: &str = "54.241.208.105:4233";
-const TASK_TWO_ADDRESS: &str = "18.144.148.168:4233";
-const TASK_THREE_ADDRESS: &str = "52.9.0.84:4233";
+const TASK_ONE_ADDRESS: &str = "54.241.208.105";
+const TASK_TWO_ADDRESS: &str = "18.144.148.168";
+const TASK_THREE_ADDRESS: &str = "52.9.0.84";
 
 fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut reader = BufReader::new(&stream);
@@ -43,9 +45,9 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice
 
             let assignment = Assignment {
                 addresses: vec![
-                    String::from(TASK_ONE_ADDRESS),
-                    String::from(TASK_TWO_ADDRESS),
-                    String::from(TASK_THREE_ADDRESS),
+                    format!("{}:{}", TASK_ONE_ADDRESS, CLIENT_PORT),
+                    format!("{}:{}", TASK_TWO_ADDRESS, CLIENT_PORT),
+                    format!("{}:{}", TASK_THREE_ADDRESS, CLIENT_PORT),
                 ],
             };
 
@@ -112,28 +114,31 @@ fn main() {
     // Send inital assignments to task servers.
     let send_counter = Arc::clone(&counter);
     let inital_assignments = send_counter.read().unwrap();
+    let task1: String = format!("{}:{}", TASK_ONE_ADDRESS, TASK_PORT);
     send_update(
-        &TASK_ONE_ADDRESS,
+        &task1,
         Update::new(
-            inital_assignments.get(TASK_ONE_ADDRESS).unwrap(),
+            inital_assignments.get(&task1.as_str()).unwrap(),
             &Vec::new(),
         ),
     )
     .unwrap();
 
+    let task2: String = format!("{}:{}", TASK_TWO_ADDRESS, TASK_PORT);
     send_update(
-        &TASK_TWO_ADDRESS,
+        &task2,
         Update::new(
-            inital_assignments.get(TASK_TWO_ADDRESS).unwrap(),
+            inital_assignments.get(&task2.as_str()).unwrap(),
             &Vec::new(),
         ),
     )
     .unwrap();
 
+    let task3: String = format!("{}:{}", TASK_THREE_ADDRESS, TASK_PORT);
     send_update(
-        &TASK_THREE_ADDRESS,
+        &task3,
         Update::new(
-            inital_assignments.get(TASK_THREE_ADDRESS).unwrap(),
+            inital_assignments.get(&task3.as_str()).unwrap(),
             &Vec::new(),
         ),
     )
@@ -146,7 +151,7 @@ fn main() {
     });
 
     // Listen and handle incoming client connections.
-    let listener = TcpListener::bind(format!("0.0.0.0:{}", PORT)).unwrap();
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", LISTEN_PORT)).unwrap();
     for stream in listener.incoming() {
         let client_counter = Arc::clone(&counter);
         match stream {
