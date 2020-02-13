@@ -82,12 +82,12 @@ fn send_update(task_addr: &str, msg: Update) -> Result<(), io::Error> {
 fn set_inital_assignments(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut assignments = counter.write().unwrap();
     let max = std::u64::MAX;
-    assignments.insert(TASK_ONE_ADDRESS, vec![Slice::new(0, max / 3)]);
+    assignments.insert("54.241.208.105:4233", vec![Slice::new(0, max / 3)]);
     assignments.insert(
-        TASK_TWO_ADDRESS,
+        "18.144.148.168:4233",
         vec![Slice::new((max / 3) + 1, (max / 3) * 2)],
     );
-    assignments.insert(TASK_THREE_ADDRESS, vec![Slice::new((max / 3) * 2 + 1, max)]);
+    assignments.insert("52.9.0.84:4233", vec![Slice::new((max / 3) * 2 + 1, max)]);
 }
 
 fn assigner_loop(_counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
