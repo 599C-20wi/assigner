@@ -16,13 +16,18 @@ pub mod types;
 
 const SLEEP_MILLIS: u64 = 5000;
 
-const PORT: u16 = 4333;
+// Port the client uses to talk to the task server.
+const CLIENT_PORT: u16 = 3333;
+// Port the assigner uses to talk to the task server.
+const TASK_PORT: u16 = 4233;
+// Port to listen for client connections on.
+const LISTEN_PORT: u16 = 4333;
 
-const TASK_ONE_ADDRESS: &str = "54.241.208.105:4233";
-const TASK_TWO_ADDRESS: &str = "18.144.148.168:4233";
-const TASK_THREE_ADDRESS: &str = "52.9.0.84:4233";
+const TASK_ONE_ADDRESS: &str = "54.241.208.105";
+const TASK_TWO_ADDRESS: &str = "18.144.148.168";
+const TASK_THREE_ADDRESS: &str = "52.9.0.84";
 
-fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
+fn handle_client(stream: TcpStream, counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut reader = BufReader::new(&stream);
     let mut writer = BufWriter::new(&stream);
     let mut buffer = Vec::new();
@@ -33,7 +38,7 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice
             }
             trace!("stream read {} bytes", size);
 
-            let _get = match Get::deserialize(&buffer[..size]) {
+            let get = match Get::deserialize(&buffer[..size]) {
                 Ok(message) => message,
                 Err(e) => {
                     error!("deserialization failed: {}", e);
@@ -41,12 +46,27 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice
                 }
             };
 
+            let slice_key = get.slice_key;
+
+            // Determine the assigned task servers for the slice.
+            let mut client_assignments: Vec<String> = Vec::new();
+            let assignments = counter.read().unwrap();
+            for (&server, slices) in assignments.iter() {
+                for slice in slices {
+                    if slice_key >= slice.start && slice_key <= slice.end {
+                        let task = format!("{}:{}", server, CLIENT_PORT);
+                        client_assignments.push(task);
+                    }
+                }
+            }
+            trace!(
+                "assignment for slice {}: {:?}",
+                slice_key,
+                client_assignments
+            );
+
             let assignment = Assignment {
-                addresses: vec![
-                    String::from(TASK_ONE_ADDRESS),
-                    String::from(TASK_TWO_ADDRESS),
-                    String::from(TASK_THREE_ADDRESS),
-                ],
+                addresses: client_assignments,
             };
 
             let serialized = assignment.serialize();
@@ -63,8 +83,9 @@ fn handle_client(stream: TcpStream, _counter: Arc<RwLock<HashMap<&str, Vec<Slice
     } {}
 }
 
-fn send_update(task_addr: &str, msg: Update) -> Result<(), io::Error> {
-    match TcpStream::connect(task_addr) {
+fn send_update(task: &str, msg: Update) -> Result<(), io::Error> {
+    let task = format!("{}:{}", task, TASK_PORT);
+    match TcpStream::connect(task) {
         Ok(mut stream) => {
             let serialized = msg.serialize();
             stream.write_all(serialized.as_bytes()).unwrap();
@@ -146,7 +167,7 @@ fn main() {
     });
 
     // Listen and handle incoming client connections.
-    let listener = TcpListener::bind(format!("0.0.0.0:{}", PORT)).unwrap();
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", LISTEN_PORT)).unwrap();
     for stream in listener.incoming() {
         let client_counter = Arc::clone(&counter);
         match stream {
