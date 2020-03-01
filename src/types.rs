@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Error;
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Ord, PartialOrd, Eq, Copy)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Ord, PartialOrd, Eq, Copy, Hash)]
 pub struct Slice {
     pub start: u64, // inclusive
     pub end: u64,   // inclusive

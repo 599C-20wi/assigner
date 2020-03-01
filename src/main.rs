@@ -6,7 +6,7 @@ use std::io;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::sync::{Arc, RwLock};
-use std::{thread, time};
+use std::thread;
 
 use crate::message::{Assignment, Get, Update};
 use crate::types::Slice;
@@ -14,7 +14,7 @@ use crate::types::Slice;
 pub mod message;
 pub mod types;
 
-const SLEEP_MILLIS: u64 = 5000;
+mod assigner;
 
 // Port the client uses to talk to the task server.
 const CLIENT_PORT: u16 = 3333;
@@ -109,16 +109,6 @@ fn set_inital_assignments(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     assignments.insert(TASK_THREE_ADDRESS, vec![Slice::new((max / 3) * 2 + 1, max)]);
 }
 
-fn assigner_loop(_counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
-    loop {
-        trace!("generating assignments");
-
-        // TODO: Add assignment generation logic here.
-
-        thread::sleep(time::Duration::from_millis(SLEEP_MILLIS));
-    }
-}
-
 fn main() {
     simple_logger::init().unwrap();
 
@@ -160,11 +150,8 @@ fn main() {
     )
     .unwrap();
 
-    // Spawn and detach thread for assignment generation.
     let assigner_counter = Arc::clone(&counter);
-    thread::spawn(move || {
-        assigner_loop(assigner_counter);
-    });
+    assigner::run(assigner_counter);
 
     // Listen and handle incoming client connections.
     let listener = TcpListener::bind(format!("0.0.0.0:{}", LISTEN_PORT)).unwrap();
