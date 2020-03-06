@@ -96,7 +96,7 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
             }
         }
 
-        thread::sleep(time::Duration::from_millis(5000));
+        thread::sleep(time::Duration::from_secs(30));
     }
 }
 
