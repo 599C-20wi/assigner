@@ -83,7 +83,9 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
         moves.sort_by(|a, b| b.weight.cmp(&a.weight));
         debug!("moves: {:?}", moves);
 
-        apply_move(&mut assignments, &moves[0]);
+        if moves.len() > 0 {
+            apply_move(&mut assignments, &moves[0]);
+        }
 
         for row in rows {
             let slice_key = row.slice_key;
