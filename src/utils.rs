@@ -7,7 +7,7 @@ use crate::message::Update;
 const TASK_PORT: u16 = 4233;
 
 pub fn send_update(task: &str, msg: Update) -> Result<(), Error> {
-    debug!("sending assignment update to {}", task);
+    debug!("sending assignment update to {}, update={:?}", task, msg);
     let task = format!("{}:{}", task, TASK_PORT);
     match TcpStream::connect(task) {
         Ok(mut stream) => {

@@ -104,34 +104,36 @@ fn main() {
     set_inital_assignments(set_counter);
 
     // Send inital assignments to task servers.
-    let send_counter = Arc::clone(&counter);
-    let inital_assignments = send_counter.read().unwrap();
-    utils::send_update(
-        &TASK_ONE_ADDRESS,
-        Update::new(
-            inital_assignments.get(TASK_ONE_ADDRESS).unwrap(),
-            &Vec::new(),
-        ),
-    )
-    .unwrap();
+    {
+        let send_counter = Arc::clone(&counter);
+        let inital_assignments = send_counter.read().unwrap();
+        utils::send_update(
+            &TASK_ONE_ADDRESS,
+            Update::new(
+                inital_assignments.get(TASK_ONE_ADDRESS).unwrap(),
+                &Vec::new(),
+            ),
+        )
+        .unwrap();
 
-    utils::send_update(
-        &TASK_TWO_ADDRESS,
-        Update::new(
-            inital_assignments.get(TASK_TWO_ADDRESS).unwrap(),
-            &Vec::new(),
-        ),
-    )
-    .unwrap();
+        utils::send_update(
+            &TASK_TWO_ADDRESS,
+            Update::new(
+                inital_assignments.get(TASK_TWO_ADDRESS).unwrap(),
+                &Vec::new(),
+            ),
+        )
+        .unwrap();
 
-    utils::send_update(
-        &TASK_THREE_ADDRESS,
-        Update::new(
-            inital_assignments.get(TASK_THREE_ADDRESS).unwrap(),
-            &Vec::new(),
-        ),
-    )
-    .unwrap();
+        utils::send_update(
+            &TASK_THREE_ADDRESS,
+            Update::new(
+                inital_assignments.get(TASK_THREE_ADDRESS).unwrap(),
+                &Vec::new(),
+            ),
+        )
+        .unwrap();
+    }
 
     let assigner_counter = Arc::clone(&counter);
     assigner::run(assigner_counter);
