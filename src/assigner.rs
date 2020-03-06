@@ -242,16 +242,22 @@ fn get_reassign_moves(
 
         let new_load_imbalance = load_imbalance(&assignments_copy, &slice_load);
         let weight = new_load_imbalance - current_load_imbalance;
+        debug!(
+            "task={}, other task={}, load imbalance={}, new load imbalance={}, weight={}",
+            task, other_task, current_load_imbalance, new_load_imbalance, weight
+        );
         // TODO: Add key churn (jjohnson)
-        let m = Move {
-            move_type: MoveType::Reassign,
-            source: String::from(task),
-            destination: String::from(other_task),
-            slice: *slice,
-            weight: (weight.abs() * 1000.0) as i32,
-            key_churn: 0,
-        };
-        moves.push(m);
+        if weight < 0 {
+            let m = Move {
+                move_type: MoveType::Reassign,
+                source: String::from(task),
+                destination: String::from(other_task),
+                slice: *slice,
+                weight: (weight.abs() * 1000.0) as i32,
+                key_churn: 0,
+            };
+            moves.push(m);
+        }
     }
 
     moves
@@ -273,20 +279,18 @@ fn get_duplicate_moves(
 
         let new_load_imbalance = load_imbalance(&assignments_copy, &slice_load);
         let weight = new_load_imbalance - current_load_imbalance;
-        debug!(
-            "task={}, other task={}, load imbalance={}, new load imbalance={}, weight={}",
-            task, other_task, current_load_imbalance, new_load_imbalance, weight
-        );
         // TODO: Add key churn (jjohnson)
-        let m = Move {
-            move_type: MoveType::Duplicate,
-            source: String::from(task),
-            destination: String::from(other_task),
-            slice: *slice,
-            weight: (weight.abs() * 1000.0) as i32,
-            key_churn: 0,
-        };
-        moves.push(m);
+        if weight < 0 {
+            let m = Move {
+                move_type: MoveType::Duplicate,
+                source: String::from(task),
+                destination: String::from(other_task),
+                slice: *slice,
+                weight: (weight.abs() * 1000.0) as i32,
+                key_churn: 0,
+            };
+            moves.push(m);
+        }
     }
 
     moves
@@ -320,15 +324,17 @@ fn get_remove_moves(
     let new_load_imbalance = load_imbalance(&assignments_copy, &slice_load);
     let weight = new_load_imbalance - current_load_imbalance;
     // TODO: Add key churn (jjohnson)
-    let m = Move {
-        move_type: MoveType::Remove,
-        source: String::from(task),
-        destination: String::new(),
-        slice: *slice,
-        weight: (weight.abs() * 1000.0) as i32,
-        key_churn: 0,
-    };
-    moves.push(m);
+    if weight < 0 {
+        let m = Move {
+            move_type: MoveType::Remove,
+            source: String::from(task),
+            destination: String::new(),
+            slice: *slice,
+            weight: (weight.abs() * 1000.0) as i32,
+            key_churn: 0,
+        };
+        moves.push(m);
+    }
 
     moves
 }
