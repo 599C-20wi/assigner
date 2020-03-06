@@ -60,38 +60,40 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     // WHERE (timestamp BETWEEN '2020-02-26 22:14:59' AND '2020-02-26 22:15:04')
 
     loop {
-        trace!("generating assignments");
-        let mut assignments = counter.write().unwrap();
-        let rows: Vec<RowCount> = pool
-            .prep_exec(sql, ())
-            .map(|result| {
-                result
-                    .map(|x| x.unwrap())
-                    .map(|row| {
-                        let (slice_key, results) = mysql::from_row(row);
-                        RowCount { slice_key, results }
-                    })
-                    .collect()
-            })
-            .unwrap();
+        {
+            trace!("generating assignments");
+            let mut assignments = counter.write().unwrap();
+            let rows: Vec<RowCount> = pool
+                .prep_exec(sql, ())
+                .map(|result| {
+                    result
+                        .map(|x| x.unwrap())
+                        .map(|row| {
+                            let (slice_key, results) = mysql::from_row(row);
+                            RowCount { slice_key, results }
+                        })
+                        .collect()
+                })
+                .unwrap();
 
-        let slice_load = slice_load(&rows, &assignments);
-        trace!("slice load: {:?}", slice_load);
+            let slice_load = slice_load(&rows, &assignments);
+            trace!("slice load: {:?}", slice_load);
 
-        let moves = get_moves(&assignments, &slice_load);
-        let mut moves: Vec<Move> = moves.into_iter().filter(|x| x.weight > 0).collect();
-        moves.sort_by(|a, b| b.weight.cmp(&a.weight));
-        debug!("moves: {:?}", moves);
+            let moves = get_moves(&assignments, &slice_load);
+            let mut moves: Vec<Move> = moves.into_iter().filter(|x| x.weight > 0).collect();
+            moves.sort_by(|a, b| b.weight.cmp(&a.weight));
+            debug!("moves: {:?}", moves);
 
-        if moves.len() > 0 {
-            apply_move(&mut assignments, &moves[0]);
-        }
+            if moves.len() > 0 {
+                apply_move(&mut assignments, &moves[0]);
+            }
 
-        for row in rows {
-            let slice_key = row.slice_key;
-            let count = row.results;
+            for row in rows {
+                let slice_key = row.slice_key;
+                let count = row.results;
 
-            trace!("{} processed {} queries", slice_key, count);
+                trace!("{} processed {} queries", slice_key, count);
+            }
         }
 
         thread::sleep(time::Duration::from_millis(5000));
