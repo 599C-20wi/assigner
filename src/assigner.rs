@@ -247,7 +247,7 @@ fn get_reassign_moves(
             task, other_task, current_load_imbalance, new_load_imbalance, weight
         );
         // TODO: Add key churn (jjohnson)
-        if weight < 0 {
+        if weight < 0.0 {
             let m = Move {
                 move_type: MoveType::Reassign,
                 source: String::from(task),
@@ -280,7 +280,7 @@ fn get_duplicate_moves(
         let new_load_imbalance = load_imbalance(&assignments_copy, &slice_load);
         let weight = new_load_imbalance - current_load_imbalance;
         // TODO: Add key churn (jjohnson)
-        if weight < 0 {
+        if weight < 0.0 {
             let m = Move {
                 move_type: MoveType::Duplicate,
                 source: String::from(task),
@@ -324,7 +324,7 @@ fn get_remove_moves(
     let new_load_imbalance = load_imbalance(&assignments_copy, &slice_load);
     let weight = new_load_imbalance - current_load_imbalance;
     // TODO: Add key churn (jjohnson)
-    if weight < 0 {
+    if weight < 0.0 {
         let m = Move {
             move_type: MoveType::Remove,
             source: String::from(task),
