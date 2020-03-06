@@ -9,7 +9,6 @@ use crate::message::Update;
 use crate::types::Slice;
 use crate::utils;
 
-
 #[derive(Debug, PartialEq, Eq)]
 struct RowCount {
     slice_key: String,
@@ -343,7 +342,7 @@ fn apply_reassign_move(
     source_task: &str,
     destination_task: &str,
     slice: &Slice,
-    assignments: &mut HashMap<&str, Vec<Slice>>
+    assignments: &mut HashMap<&str, Vec<Slice>>,
 ) {
     // Remove slice from current task.
     let index = assignments[source_task]
@@ -353,74 +352,64 @@ fn apply_reassign_move(
     assignments.get_mut(source_task).unwrap().remove(index);
 
     // Add slice to new task.
-    assignments
-        .get_mut(destination_task)
-        .unwrap()
-        .push(*slice);
+    assignments.get_mut(destination_task).unwrap().push(*slice);
 }
 
 fn apply_duplicate_move(
     destination_task: &str,
     slice: &Slice,
-    assignments: &mut HashMap<&str, Vec<Slice>>
+    assignments: &mut HashMap<&str, Vec<Slice>>,
 ) {
     // Copy slice to new task.
-    assignments
-        .get_mut(destination_task)
-        .unwrap()
-        .push(*slice);
+    assignments.get_mut(destination_task).unwrap().push(*slice);
 }
 
-fn apply_remove_move(
-    task: &str,
-    slice: &Slice,
-    assignments: &mut HashMap<&str, Vec<Slice>>
-) {
+fn apply_remove_move(task: &str, slice: &Slice, assignments: &mut HashMap<&str, Vec<Slice>>) {
     // Remove slice from current task.
-    let index = assignments[task]
-        .iter()
-        .position(|x| *x == *slice)
-        .unwrap();
+    let index = assignments[task].iter().position(|x| *x == *slice).unwrap();
     assignments.get_mut(task).unwrap().remove(index);
 }
 
-fn apply_move(
-    mut assignments: &mut HashMap<&str, Vec<Slice>>,
-    m: &Move
-) {
+fn apply_move(mut assignments: &mut HashMap<&str, Vec<Slice>>, m: &Move) {
     match &m.move_type {
         MoveType::Reassign => {
             apply_reassign_move(&m.source, &m.destination, &m.slice, &mut assignments);
 
             let source_update = Update {
-                assigned: vec!(),
-                unassigned: vec!(m.slice)
+                assigned: vec![],
+                unassigned: vec![m.slice],
             };
-            utils::send_update(&m.source, source_update).expect(format!("failed to send reassign update to task {}", m.source).as_str());
+            utils::send_update(&m.source, source_update)
+                .expect(format!("failed to send reassign update to task {}", m.source).as_str());
 
             let destination_update = Update {
-                assigned: vec!(m.slice),
-                unassigned: vec!()
+                assigned: vec![m.slice],
+                unassigned: vec![],
             };
-            utils::send_update(&m.destination, destination_update).expect(format!("failed to send reassign update to task {}", m.destination).as_str());
-        },
+            utils::send_update(&m.destination, destination_update).expect(
+                format!("failed to send reassign update to task {}", m.destination).as_str(),
+            );
+        }
         MoveType::Duplicate => {
             apply_duplicate_move(&m.destination, &m.slice, &mut assignments);
 
             let update = Update {
-                assigned: vec!(m.slice),
-                unassigned: vec!()
+                assigned: vec![m.slice],
+                unassigned: vec![],
             };
-            utils::send_update(&m.destination, update).expect(format!("failed to send duplicate update to task {}", m.destination).as_str());
+            utils::send_update(&m.destination, update).expect(
+                format!("failed to send duplicate update to task {}", m.destination).as_str(),
+            );
         }
         MoveType::Remove => {
             apply_remove_move(&m.source, &m.slice, &mut assignments);
 
             let update = Update {
-                assigned: vec!(),
-                unassigned: vec!(m.slice)
+                assigned: vec![],
+                unassigned: vec![m.slice],
             };
-            utils::send_update(&m.source, update).expect(format!("failed to send remove update to task {}", m.source).as_str());
+            utils::send_update(&m.source, update)
+                .expect(format!("failed to send remove update to task {}", m.source).as_str());
         }
     };
 }
