@@ -83,7 +83,7 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
             moves.sort_by(|a, b| b.weight.cmp(&a.weight));
             debug!("moves: {:?}", moves);
 
-            if moves.len() > 0 {
+            if !moves.is_empty() {
                 apply_move(&mut assignments, &moves[0]);
             }
 
@@ -110,20 +110,17 @@ fn slices(assignments: &HashMap<&str, Vec<Slice>>) -> HashSet<Slice> {
 }
 
 // Return a map of slice to the number of requests for that slice.
-fn slice_load(
-    rows: &Vec<RowCount>,
-    assignments: &HashMap<&str, Vec<Slice>>,
-) -> HashMap<Slice, i64> {
+fn slice_load(rows: &[RowCount], assignments: &HashMap<&str, Vec<Slice>>) -> HashMap<Slice, i64> {
     let mut map: HashMap<Slice, i64> = HashMap::new();
 
     let slices = slices(assignments);
     for slice in slices {
         map.insert(slice, 0);
         for row in rows {
-            let slice_key = &row.slice_key.parse::<u64>().unwrap();
+            let slice_key = row.slice_key.parse::<u64>().unwrap();
             let count = row.results as i64;
 
-            if slice_key >= &slice.start && slice_key <= &slice.end {
+            if slice_key >= slice.start && slice_key <= slice.end {
                 *map.get_mut(&slice).unwrap() += count;
             }
         }
@@ -250,7 +247,7 @@ fn get_reassign_moves(
             let m = Move {
                 move_type: MoveType::Reassign,
                 source: String::from(task),
-                destination: String::from(other_task),
+                destination: other_task,
                 slice: *slice,
                 weight: (weight.abs() * 1000.0) as i32,
                 key_churn: 0,
@@ -283,7 +280,7 @@ fn get_duplicate_moves(
             let m = Move {
                 move_type: MoveType::Duplicate,
                 source: String::from(task),
-                destination: String::from(other_task),
+                destination: other_task,
                 slice: *slice,
                 weight: (weight.abs() * 1000.0) as i32,
                 key_churn: 0,
@@ -380,15 +377,14 @@ fn apply_move(mut assignments: &mut HashMap<&str, Vec<Slice>>, m: &Move) {
                 unassigned: vec![m.slice],
             };
             utils::send_update(&m.source, source_update)
-                .expect(format!("failed to send reassign update to task {}", m.source).as_str());
+                .expect("failed to send reassign update to task");
 
             let destination_update = Update {
                 assigned: vec![m.slice],
                 unassigned: vec![],
             };
-            utils::send_update(&m.destination, destination_update).expect(
-                format!("failed to send reassign update to task {}", m.destination).as_str(),
-            );
+            utils::send_update(&m.destination, destination_update)
+                .expect("failed to send reassign update to task");
         }
         MoveType::Duplicate => {
             apply_duplicate_move(&m.destination, &m.slice, &mut assignments);
@@ -397,9 +393,8 @@ fn apply_move(mut assignments: &mut HashMap<&str, Vec<Slice>>, m: &Move) {
                 assigned: vec![m.slice],
                 unassigned: vec![],
             };
-            utils::send_update(&m.destination, update).expect(
-                format!("failed to send duplicate update to task {}", m.destination).as_str(),
-            );
+            utils::send_update(&m.destination, update)
+                .expect("failed to send duplicate update to task");
         }
         MoveType::Remove => {
             apply_remove_move(&m.source, &m.slice, &mut assignments);
@@ -408,8 +403,7 @@ fn apply_move(mut assignments: &mut HashMap<&str, Vec<Slice>>, m: &Move) {
                 assigned: vec![],
                 unassigned: vec![m.slice],
             };
-            utils::send_update(&m.source, update)
-                .expect(format!("failed to send remove update to task {}", m.source).as_str());
+            utils::send_update(&m.source, update).expect("failed to send remove update to task");
         }
     };
 }
