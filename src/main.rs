@@ -2,24 +2,22 @@
 extern crate log;
 
 use std::collections::HashMap;
-use std::io;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::sync::{Arc, RwLock};
-use std::{thread, time};
+use std::thread;
 
 use crate::message::{Assignment, Get, Update};
 use crate::types::Slice;
 
 pub mod message;
 pub mod types;
+pub mod utils;
 
-const SLEEP_MILLIS: u64 = 5000;
+mod assigner;
 
 // Port the client uses to talk to the task server.
 const CLIENT_PORT: u16 = 3333;
-// Port the assigner uses to talk to the task server.
-const TASK_PORT: u16 = 4233;
 // Port to listen for client connections on.
 const LISTEN_PORT: u16 = 4333;
 
@@ -83,21 +81,6 @@ fn handle_client(stream: TcpStream, counter: Arc<RwLock<HashMap<&str, Vec<Slice>
     } {}
 }
 
-fn send_update(task: &str, msg: Update) -> Result<(), io::Error> {
-    let task = format!("{}:{}", task, TASK_PORT);
-    match TcpStream::connect(task) {
-        Ok(mut stream) => {
-            let serialized = msg.serialize();
-            stream.write_all(serialized.as_bytes()).unwrap();
-            Ok(())
-        }
-        Err(e) => {
-            error!("failed to connect to task server: {}", e);
-            Err(e)
-        }
-    }
-}
-
 fn set_inital_assignments(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let mut assignments = counter.write().unwrap();
     let max = std::u64::MAX;
@@ -107,16 +90,6 @@ fn set_inital_assignments(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
         vec![Slice::new((max / 3) + 1, (max / 3) * 2)],
     );
     assignments.insert(TASK_THREE_ADDRESS, vec![Slice::new((max / 3) * 2 + 1, max)]);
-}
-
-fn assigner_loop(_counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
-    loop {
-        trace!("generating assignments");
-
-        // TODO: Add assignment generation logic here.
-
-        thread::sleep(time::Duration::from_millis(SLEEP_MILLIS));
-    }
 }
 
 fn main() {
@@ -131,40 +104,39 @@ fn main() {
     set_inital_assignments(set_counter);
 
     // Send inital assignments to task servers.
-    let send_counter = Arc::clone(&counter);
-    let inital_assignments = send_counter.read().unwrap();
-    send_update(
-        &TASK_ONE_ADDRESS,
-        Update::new(
-            inital_assignments.get(TASK_ONE_ADDRESS).unwrap(),
-            &Vec::new(),
-        ),
-    )
-    .unwrap();
+    {
+        let send_counter = Arc::clone(&counter);
+        let inital_assignments = send_counter.read().unwrap();
+        utils::send_update(
+            &TASK_ONE_ADDRESS,
+            Update::new(
+                inital_assignments.get(TASK_ONE_ADDRESS).unwrap(),
+                &Vec::new(),
+            ),
+        )
+        .unwrap();
 
-    send_update(
-        &TASK_TWO_ADDRESS,
-        Update::new(
-            inital_assignments.get(TASK_TWO_ADDRESS).unwrap(),
-            &Vec::new(),
-        ),
-    )
-    .unwrap();
+        utils::send_update(
+            &TASK_TWO_ADDRESS,
+            Update::new(
+                inital_assignments.get(TASK_TWO_ADDRESS).unwrap(),
+                &Vec::new(),
+            ),
+        )
+        .unwrap();
 
-    send_update(
-        &TASK_THREE_ADDRESS,
-        Update::new(
-            inital_assignments.get(TASK_THREE_ADDRESS).unwrap(),
-            &Vec::new(),
-        ),
-    )
-    .unwrap();
+        utils::send_update(
+            &TASK_THREE_ADDRESS,
+            Update::new(
+                inital_assignments.get(TASK_THREE_ADDRESS).unwrap(),
+                &Vec::new(),
+            ),
+        )
+        .unwrap();
+    }
 
-    // Spawn and detach thread for assignment generation.
     let assigner_counter = Arc::clone(&counter);
-    thread::spawn(move || {
-        assigner_loop(assigner_counter);
-    });
+    assigner::run(assigner_counter);
 
     // Listen and handle incoming client connections.
     let listener = TcpListener::bind(format!("0.0.0.0:{}", LISTEN_PORT)).unwrap();
