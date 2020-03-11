@@ -56,7 +56,6 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
             expressions
         WHERE DATE_ADD(timestamp, INTERVAL 5 SECOND) >= NOW()
         GROUP BY slice_key";
-    // WHERE (timestamp BETWEEN '2020-02-26 22:14:59' AND '2020-02-26 22:15:04')
 
     loop {
         {
@@ -112,7 +111,6 @@ fn slices(assignments: &HashMap<&str, Vec<Slice>>) -> HashSet<Slice> {
 // Return a map of slice to the number of requests for that slice.
 fn slice_load(rows: &[RowCount], assignments: &HashMap<&str, Vec<Slice>>) -> HashMap<Slice, i64> {
     let mut map: HashMap<Slice, i64> = HashMap::new();
-
     let slices = slices(assignments);
     for slice in slices {
         map.insert(slice, 0);
@@ -125,7 +123,6 @@ fn slice_load(rows: &[RowCount], assignments: &HashMap<&str, Vec<Slice>>) -> Has
             }
         }
     }
-
     map
 }
 
@@ -146,8 +143,6 @@ fn load_imbalance(
                 servers += 1;
             }
         }
-        // *slice_task_count.get_mut(&slice).unwrap() = servers;
-        // slice_task_count[&slice] = servers;
         slice_task_count.insert(slice, servers);
     }
 
