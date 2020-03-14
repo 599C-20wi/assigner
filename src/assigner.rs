@@ -1,3 +1,4 @@
+
 use std::cmp;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
@@ -50,12 +51,12 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
     let pool = mysql::Pool::new(url.as_str()).unwrap();
 
     let sql = "
-        SELECT
-            slice_key, COUNT(*)
-        FROM
-            expressions
-        WHERE DATE_ADD(timestamp, INTERVAL 5 SECOND) >= NOW()
-        GROUP BY slice_key";
+            SELECT
+                slice_key, COUNT(*)
+            FROM
+                expressions
+            WHERE DATE_ADD(timestamp, INTERVAL 5 SECOND) >= NOW()
+            GROUP BY slice_key";
 
     loop {
         {
@@ -78,7 +79,7 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
             trace!("slice load: {:?}", slice_load);
 
             let moves = get_moves(&assignments, &slice_load);
-            let mut moves: Vec<Move> = moves.into_iter().filter(|x| x.weight > 100).collect();
+            let mut moves: Vec<Move> = moves.into_iter().filter(|x| x.weight > 0).collect();
             moves.sort_by(|a, b| b.weight.cmp(&a.weight));
             debug!("moves: {:?}", moves);
 
