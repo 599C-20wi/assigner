@@ -78,7 +78,7 @@ fn start_loop(counter: Arc<RwLock<HashMap<&str, Vec<Slice>>>>) {
             trace!("slice load: {:?}", slice_load);
 
             let moves = get_moves(&assignments, &slice_load);
-            let mut moves: Vec<Move> = moves.into_iter().filter(|x| x.weight > 0).collect();
+            let mut moves: Vec<Move> = moves.into_iter().filter(|x| x.weight > 500).collect();
             moves.sort_by(|a, b| b.weight.cmp(&a.weight));
             debug!("moves: {:?}", moves);
 
